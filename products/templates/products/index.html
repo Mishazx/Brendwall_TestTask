@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Продукты</title>
+    <script>
+        async function fetchProducts() {
+            try {
+                const response = await fetch('/api/products/');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error('Ошибка: ' + errorData.message);
+                }
+                const products = await response.json();
+                const productTable = document.getElementById('product-table');
+                productTable.innerHTML = '';
+                products.forEach(product => {
+                    const row = `<tr>
+                        <td>${product.name}</td>
+                        <td>${product.description}</td>
+                        <td>${product.price}</td>
+                    </tr>`;
+                    productTable.innerHTML += row;
+                });
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function addProduct(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const price = parseFloat(document.getElementById('price').value);
+            try {
+                const response = await fetch('/api/products/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, description, price }),
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errors = Object.values(errorData).flat().join('\n');
+                    throw new Error('Ошибки при добавлении продукта:\n' + errors);
+                }
+                await fetchProducts();
+                clearForm();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function clearDatabase() {
+          if (!confirm('Вы уверены, что хотите удалить все продукты?')) return;
+
+          try {
+              const response = await fetch('/api/products/clear/', {
+                  method: 'DELETE',
+              });
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error('Ошибка: ' + errorData.message);
+              }
+              await fetchProducts();
+          } catch (error) {
+              alert(error.message);
+          }
+        }
+
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('price').value = '';
+        }
+
+        window.onload = fetchProducts;
+    </script>
+</head>
+<body>
+  <h1>Добавить новый продукт</h1>
+  <form onsubmit="addProduct(event)">
+      <input id="name" type="text" placeholder="Название" required>
+      <input id="description" type="text" placeholder="Описание" required>
+      <input id="price" type="number" placeholder="Цена" min="0.01" step="0.01" required>
+      <button type="submit">Отправить</button>
+      <button type="button" onclick="clearDatabase()">Очистить базу данных</button> <!-- Кнопка очистки -->
+  </form>
+  <h2>Список продуктов</h2>
+  <table border="1">
+      <thead>
+          <tr>
+              <th>Название</th>
+              <th>Описание</th>
+              <th>Цена</th>
+          </tr>
+      </thead>
+      <tbody id="product-table"></tbody>
+  </table>
+</body>
+</html>

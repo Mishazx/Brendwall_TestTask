@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "23456:8000"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      sh -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 BRENDWALL.wsgi:application"
